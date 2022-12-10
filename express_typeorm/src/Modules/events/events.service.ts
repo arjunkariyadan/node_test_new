@@ -1,13 +1,16 @@
-import { Repository } from 'typeorm';
-import { Event } from './entities/event.entity';
+import { format } from "date-fns";
+import { In, MoreThan, Repository } from "typeorm";
+import { Event } from "./entities/event.entity";
+import { Workshop } from "./entities/workshop.entity";
 import App from "../../app";
-
 
 export class EventsService {
   private eventRepository: Repository<Event>;
+  private workshopRepository: Repository<Workshop>;
 
   constructor(app: App) {
     this.eventRepository = app.getDataSource().getRepository(Event);
+    this.workshopRepository = app.getDataSource().getRepository(Workshop);
   }
 
   async getWarmupEvents() {
@@ -92,7 +95,19 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    const events = await this.eventRepository.find();
+    const eventIds = events.map((evnt) => evnt.id);
+    const workshops = await this.workshopRepository.find({
+      where: { eventId: In([...eventIds]) },
+    });
+
+    return events.map((evnt: any) => {
+      evnt.workshops = workshops.filter(
+        (workshop) => workshop.eventId === evnt.id
+      );
+
+      return evnt;
+    });
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -162,6 +177,26 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    const events = await this.eventRepository.find();
+    const eventIds = events.map((evnt) => evnt.id);
+
+    const MoreThanDate = (date: Date) =>
+      MoreThan(format(new Date(), "yyyy-mm-dd HH:MM:ss"));
+    const workshops = await this.workshopRepository.find({
+      where: {
+        eventId: In([...eventIds]),
+        start: MoreThanDate(new Date()),
+      },
+    });
+
+    const allEvents = events.map((evnt: any) => {
+      evnt.workshops = workshops.filter(
+        (workshop) => workshop.eventId === evnt.id
+      );
+
+      return evnt;
+    });
+
+    return allEvents.filter((evnt) => evnt.workshops.length > 0);
   }
 }
