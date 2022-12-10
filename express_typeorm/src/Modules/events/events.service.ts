@@ -177,26 +177,29 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    const events = await this.eventRepository.find();
-    const eventIds = events.map((evnt) => evnt.id);
-
-    const MoreThanDate = (date: Date) =>
-      MoreThan(format(new Date(), "yyyy-mm-dd HH:MM:ss"));
-    const workshops = await this.workshopRepository.find({
+    const futureEventsId = await this.workshopRepository.find({
+      select: {
+        eventId: true,
+      },
       where: {
-        eventId: In([...eventIds]),
-        start: MoreThanDate(new Date()),
+        start: MoreThan(format(new Date(), "yyyy-mm-dd HH:MM:ss")),
       },
     });
-
-    const allEvents = events.map((evnt: any) => {
-      evnt.workshops = workshops.filter(
-        (workshop) => workshop.eventId === evnt.id
-      );
-
-      return evnt;
+    const events = await this.eventRepository.find({
+      where: {
+        id: In(futureEventsId.map((futureEvent) => futureEvent.eventId)),
+      },
+    });
+    const workshops = await this.workshopRepository.find({
+      where: { eventId: In(events.map((event) => event.id)) },
     });
 
-    return allEvents.filter((evnt) => evnt.workshops.length > 0);
+    return events.map((event: EventWithWorkshop) => {
+      event.workshops = workshops.filter(
+        (workshop) => workshop.eventId === event.id
+      );
+
+      return event;
+    });
   }
 }
