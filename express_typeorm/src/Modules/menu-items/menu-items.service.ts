@@ -1,5 +1,5 @@
 import { MenuItem } from "./entities/menu-item.entity";
-import { MenuItemWithChildren } from "./interfaces/MenuItemWithChildren.interface";
+import { MenuItemWithChildren } from "./interfaces/menu-item-with-children.interface";
 import { Repository } from "typeorm";
 import App from "../../app";
 

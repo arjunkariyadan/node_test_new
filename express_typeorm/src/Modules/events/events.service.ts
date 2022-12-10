@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { In, MoreThan, Repository } from "typeorm";
 import { Event } from "./entities/event.entity";
 import { Workshop } from "./entities/workshop.entity";
+import { EventWithWorkshop } from "./interfaces/event-with-workshops.interface";
 import App from "../../app";
 
 export class EventsService {
@@ -96,17 +97,16 @@ export class EventsService {
 
   async getEventsWithWorkshops() {
     const events = await this.eventRepository.find();
-    const eventIds = events.map((evnt) => evnt.id);
     const workshops = await this.workshopRepository.find({
-      where: { eventId: In([...eventIds]) },
+      where: { eventId: In(events.map((event) => event.id)) },
     });
 
-    return events.map((evnt: any) => {
-      evnt.workshops = workshops.filter(
-        (workshop) => workshop.eventId === evnt.id
+    return events.map((event: EventWithWorkshop) => {
+      event.workshops = workshops.filter(
+        (workshop) => workshop.eventId === event.id
       );
 
-      return evnt;
+      return event;
     });
   }
 
